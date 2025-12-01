@@ -52,15 +52,15 @@ export default function Login() {
 
   return (
     <div
-      className={`${geistSans.className} min-h-screen flex items-center justify-center bg-white dark:bg-black px-4 font-sans`}
+      className={`${geistSans.className} min-h-screen flex items-center justify-center bg-amber-50 px-4 font-sans`}
     >
       <div className="w-full max-w-md">
         {/* Logo/Title Section */}
         <div className="text-center mb-12">
-          <h1 className="text-3xl font-semibold tracking-tight text-black dark:text-white mb-2">
+          <h1 className="text-3xl font-semibold tracking-tight text-stone-800 mb-2">
             Login
           </h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          <p className="text-sm text-stone-600">
             Sign in to continue
           </p>
         </div>
@@ -68,14 +68,14 @@ export default function Login() {
         {/* Login Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* User Type Selector */}
-          <div className="bg-zinc-100 dark:bg-zinc-900 p-1 rounded-lg flex">
+          <div className="bg-amber-100 p-1 rounded-lg flex">
             <button
               type="button"
               onClick={() => handleUserTypeChange("user")}
               className={`flex-1 py-2.5 px-4 rounded-md text-sm font-medium transition-all duration-200 ${
                 userType === "user"
-                  ? "bg-white dark:bg-zinc-800 text-black dark:text-white shadow-sm"
-                  : "text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white"
+                  ? "bg-white text-stone-800 shadow-sm"
+                  : "text-stone-600 hover:text-stone-800"
               }`}
             >
               User
@@ -85,8 +85,8 @@ export default function Login() {
               onClick={() => handleUserTypeChange("admin")}
               className={`flex-1 py-2.5 px-4 rounded-md text-sm font-medium transition-all duration-200 ${
                 userType === "admin"
-                  ? "bg-white dark:bg-zinc-800 text-black dark:text-white shadow-sm"
-                  : "text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white"
+                  ? "bg-white text-stone-800 shadow-sm"
+                  : "text-stone-600 hover:text-stone-800"
               }`}
             >
               Admin
@@ -97,7 +97,7 @@ export default function Login() {
           <div className="space-y-2">
             <label
               htmlFor="email"
-              className="block text-sm font-medium text-black dark:text-white"
+              className="block text-sm font-medium text-stone-700"
             >
               Email
             </label>
@@ -107,7 +107,7 @@ export default function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-3 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-950 text-black dark:text-white placeholder-zinc-500 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent transition-all"
+              className="w-full px-4 py-3 border border-stone-300 rounded-lg bg-white text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all"
               placeholder="you@example.com"
             />
           </div>
@@ -116,7 +116,7 @@ export default function Login() {
           <div className="space-y-2">
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-black dark:text-white"
+              className="block text-sm font-medium text-stone-700"
             >
               Password
             </label>
@@ -126,7 +126,7 @@ export default function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full px-4 py-3 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-950 text-black dark:text-white placeholder-zinc-500 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent transition-all"
+              className="w-full px-4 py-3 border border-stone-300 rounded-lg bg-white text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all"
               placeholder="••••••••"
             />
           </div>
@@ -134,7 +134,7 @@ export default function Login() {
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full py-3 px-4 bg-black dark:bg-white text-white dark:text-black rounded-lg font-medium hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white focus:ring-offset-2 dark:focus:ring-offset-black"
+            className="w-full py-3 px-4 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2"
           >
             Sign in
           </button>
@@ -144,7 +144,7 @@ export default function Login() {
         <div className="mt-8 text-center">
           <a
             href="#"
-            className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white transition-colors"
+            className="text-sm text-stone-600 hover:text-stone-800 transition-colors"
           >
             Forgot password?
           </a>
