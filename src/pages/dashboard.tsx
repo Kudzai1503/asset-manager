@@ -4,6 +4,7 @@ import { Geist } from "next/font/google";
 import Button from "@/components/buttons/Button";
 import AdminDashboard from "@/components/dashboard/AdminDashboard";
 import UserDashboard from "@/components/dashboard/UserDashboard";
+import { DashboardSkeleton } from "@/components/skeletons";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -54,10 +55,8 @@ export default function Dashboard() {
 
   if (isLoading) {
     return (
-      <div
-        className={`${geistSans.className} min-h-screen flex items-center justify-center bg-amber-50 font-sans`}
-      >
-        <div className="text-stone-800">Loading...</div>
+      <div className={`${geistSans.className} font-sans`}>
+        <DashboardSkeleton />
       </div>
     );
   }

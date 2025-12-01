@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import Button from "@/components/buttons/Button";
 import Input from "@/components/inputs/Input";
+import { AdminDashboardSkeleton } from "@/components/skeletons";
 
 type Asset = {
   id: string;
@@ -205,7 +206,7 @@ export default function AdminDashboard() {
   };
 
   if (isLoading) {
-    return <div className="text-center py-8">Loading...</div>;
+    return <AdminDashboardSkeleton />;
   }
 
   return (
