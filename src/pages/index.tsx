@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import Link from "next/link";
 import { Geist } from "next/font/google";
 import Button from "@/components/buttons/Button";
+import Input from "@/components/inputs/Input";
+// AG2003k - AG2003k
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -91,42 +94,26 @@ export default function Login() {
           </div>
 
           {/* Email Input */}
-          <div className="space-y-2">
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-stone-700"
-            >
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full px-4 py-3 border border-stone-300 rounded-lg bg-white text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all"
-              placeholder="you@example.com"
-            />
-          </div>
+          <Input
+            id="email"
+            label="Email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
+            required
+          />
 
           {/* Password Input */}
-          <div className="space-y-2">
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-stone-700"
-            >
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full px-4 py-3 border border-stone-300 rounded-lg bg-white text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all"
-              placeholder="••••••••"
-            />
-          </div>
+          <Input
+            id="password"
+            label="Password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            required
+          />
 
           {/* Submit Button */}
           <Button type="submit" variant="primary" size="lg" fullWidth>
@@ -135,13 +122,22 @@ export default function Login() {
         </form>
 
         {/* Footer Links */}
-        <div className="mt-8 text-center">
+        <div className="mt-8 text-center space-y-2">
           <a
             href="#"
-            className="text-sm text-stone-600 hover:text-stone-800 transition-colors"
+            className="block text-sm text-stone-600 hover:text-stone-800 transition-colors"
           >
             Forgot password?
           </a>
+          <p className="text-sm text-stone-600">
+            Don't have an account?{" "}
+            <Link
+              href="/register"
+              className="font-medium text-stone-800 hover:text-stone-900 transition-colors"
+            >
+              Sign up
+            </Link>
+          </p>
         </div>
       </div>
     </div>
