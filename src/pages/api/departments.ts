@@ -30,7 +30,7 @@ async function verifyAuth(req: NextApiRequest) {
 
 async function verifyAdmin(req: NextApiRequest) {
   const user = await verifyAuth(req);
-  if (!user) return null;
+  if (!user || !supabaseAdmin) return null;
 
   const { data: userData } = await supabaseAdmin
     .from("users")

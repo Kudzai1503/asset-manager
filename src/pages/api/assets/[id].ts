@@ -24,9 +24,7 @@ async function verifyAdmin(req: NextApiRequest) {
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
   const { data: { user } } = await supabase.auth.getUser(token);
 
-  if (!user) {
-    return null;
-  }
+  if (!user || !supabaseAdmin) return null;
 
   // Check if user is admin
   const { data: userData } = await supabaseAdmin
