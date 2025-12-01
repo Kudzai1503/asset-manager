@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { Geist } from "next/font/google";
+import Button from "@/components/buttons/Button";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -69,28 +70,24 @@ export default function Login() {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* User Type Selector */}
           <div className="bg-amber-100 p-1 rounded-lg flex">
-            <button
+            <Button
               type="button"
+              variant={userType === "user" ? "toggle-active" : "toggle"}
               onClick={() => handleUserTypeChange("user")}
-              className={`flex-1 py-2.5 px-4 rounded-md text-sm font-medium transition-all duration-200 ${
-                userType === "user"
-                  ? "bg-white text-stone-800 shadow-sm"
-                  : "text-stone-600 hover:text-stone-800"
-              }`}
+              fullWidth
+              className="flex-1"
             >
               User
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant={userType === "admin" ? "toggle-active" : "toggle"}
               onClick={() => handleUserTypeChange("admin")}
-              className={`flex-1 py-2.5 px-4 rounded-md text-sm font-medium transition-all duration-200 ${
-                userType === "admin"
-                  ? "bg-white text-stone-800 shadow-sm"
-                  : "text-stone-600 hover:text-stone-800"
-              }`}
+              fullWidth
+              className="flex-1"
             >
               Admin
-            </button>
+            </Button>
           </div>
 
           {/* Email Input */}
@@ -132,12 +129,9 @@ export default function Login() {
           </div>
 
           {/* Submit Button */}
-          <button
-            type="submit"
-            className="w-full py-3 px-4 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2"
-          >
+          <Button type="submit" variant="primary" size="lg" fullWidth>
             Sign in
-          </button>
+          </Button>
         </form>
 
         {/* Footer Links */}
