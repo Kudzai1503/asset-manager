@@ -1,78 +1,155 @@
-import Image from "next/image";
-import { Geist, Geist_Mono } from "next/font/google";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
+import { Geist } from "next/font/google";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+type UserType = "admin" | "user";
 
-export default function Home() {
+export default function Login() {
+  const router = useRouter();
+  const [userType, setUserType] = useState<UserType>("user");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  // Initialize user type from URL query on mount
+  useEffect(() => {
+    if (!router.isReady) return;
+
+    const { type } = router.query;
+    const typeParam = Array.isArray(type) ? type[0] : type;
+
+    if (typeParam === "admin" || typeParam === "user") {
+      setUserType(typeParam);
+    } else if (!typeParam) {
+      // If no query param, set default and update URL
+      router.replace({
+        pathname: router.pathname,
+        query: { ...router.query, type: "user" },
+      }, undefined, { shallow: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router.isReady, router.query.type]);
+
+  // Update URL when user type changes
+  const handleUserTypeChange = (newType: UserType) => {
+    setUserType(newType);
+    router.replace({
+      pathname: router.pathname,
+      query: { ...router.query, type: newType },
+    }, undefined, { shallow: true });
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Handle login logic here
+    console.log("Login attempt:", { userType, email, password });
+  };
+
   return (
     <div
-      className={`${geistSans.className} ${geistMono.className} flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black`}
+      className={`${geistSans.className} min-h-screen flex items-center justify-center bg-white dark:bg-black px-4 font-sans`}
     >
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the index.tsx file.
+      <div className="w-full max-w-md">
+        {/* Logo/Title Section */}
+        <div className="text-center mb-12">
+          <h1 className="text-3xl font-semibold tracking-tight text-black dark:text-white mb-2">
+            Login
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            Sign in to continue
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+
+        {/* Login Form */}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* User Type Selector */}
+          <div className="bg-zinc-100 dark:bg-zinc-900 p-1 rounded-lg flex">
+            <button
+              type="button"
+              onClick={() => handleUserTypeChange("user")}
+              className={`flex-1 py-2.5 px-4 rounded-md text-sm font-medium transition-all duration-200 ${
+                userType === "user"
+                  ? "bg-white dark:bg-zinc-800 text-black dark:text-white shadow-sm"
+                  : "text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white"
+              }`}
+            >
+              User
+            </button>
+            <button
+              type="button"
+              onClick={() => handleUserTypeChange("admin")}
+              className={`flex-1 py-2.5 px-4 rounded-md text-sm font-medium transition-all duration-200 ${
+                userType === "admin"
+                  ? "bg-white dark:bg-zinc-800 text-black dark:text-white shadow-sm"
+                  : "text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white"
+              }`}
+            >
+              Admin
+            </button>
+          </div>
+
+          {/* Email Input */}
+          <div className="space-y-2">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-black dark:text-white"
+            >
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full px-4 py-3 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-950 text-black dark:text-white placeholder-zinc-500 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent transition-all"
+              placeholder="you@example.com"
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs/pages/getting-started?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+          </div>
+
+          {/* Password Input */}
+          <div className="space-y-2">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-black dark:text-white"
+            >
+              Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="w-full px-4 py-3 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-950 text-black dark:text-white placeholder-zinc-500 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent transition-all"
+              placeholder="••••••••"
+            />
+          </div>
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            className="w-full py-3 px-4 bg-black dark:bg-white text-white dark:text-black rounded-lg font-medium hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white focus:ring-offset-2 dark:focus:ring-offset-black"
           >
-            Documentation
+            Sign in
+          </button>
+        </form>
+
+        {/* Footer Links */}
+        <div className="mt-8 text-center">
+          <a
+            href="#"
+            className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white transition-colors"
+          >
+            Forgot password?
           </a>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
