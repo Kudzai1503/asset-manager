@@ -19,12 +19,16 @@ export default function Login() {
   const [userType, setUserType] = useState<UserType>("user");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   // Initialize user type from URL query on mount
   useEffect(() => {
     if (!router.isReady) return;
 
-    const { type } = router.query;
+    const { type, registered } = router.query;
     const typeParam = Array.isArray(type) ? type[0] : type;
 
     if (typeParam === "admin" || typeParam === "user") {
@@ -36,8 +40,15 @@ export default function Login() {
         query: { ...router.query, type: "user" },
       }, undefined, { shallow: true });
     }
+
+    // Show success message if coming from registration
+    if (registered === "true") {
+      setSuccessMessage("Account created successfully! Please sign in.");
+      // Clear the query param after showing message
+      router.replace("/", undefined, { shallow: true });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router.isReady, router.query.type]);
+  }, [router.isReady, router.query.type, router.query.registered]);
 
   // Update URL when user type changes
   const handleUserTypeChange = (newType: UserType) => {
@@ -48,10 +59,67 @@ export default function Login() {
     }, undefined, { shallow: true });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle login logic here
-    console.log("Login attempt:", { userType, email, password });
+    setError("");
+    setEmailError("");
+
+    if (!email || !password) {
+      setError("Please fill in all fields");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          userType,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Handle specific error cases
+        if (response.status === 401) {
+          setError(data.message || "Invalid email or password");
+        } else if (response.status === 403) {
+          setError(data.message || "Access denied");
+        } else if (response.status === 400) {
+          if (data.message?.includes("email")) {
+            setEmailError(data.message);
+          } else {
+            setError(data.message || "Invalid input");
+          }
+        } else {
+          setError(data.message || "Login failed. Please try again.");
+        }
+        setIsLoading(false);
+        return;
+      }
+
+      // Success - store session and redirect
+      if (data.success && data.session) {
+        // Store session tokens
+        localStorage.setItem("access_token", data.session.access_token);
+        localStorage.setItem("refresh_token", data.session.refresh_token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+        
+        // Redirect to dashboard (you can change this route)
+        router.push("/dashboard");
+      }
+    } catch (err) {
+      console.error("Login error:", err);
+      setError("An unexpected error occurred. Please try again.");
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -99,9 +167,14 @@ export default function Login() {
             label="Email"
             type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setEmailError("");
+              setError("");
+            }}
             placeholder="you@example.com"
             required
+            error={emailError}
           />
 
           {/* Password Input */}
@@ -110,14 +183,37 @@ export default function Login() {
             label="Password"
             type="password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              setError("");
+            }}
             placeholder="••••••••"
             required
           />
 
+          {/* Success Message */}
+          {successMessage && (
+            <div className="text-sm text-green-600 text-center bg-green-50 border border-green-200 rounded-lg p-3" role="alert">
+              {successMessage}
+            </div>
+          )}
+
+          {/* Error Message */}
+          {error && (
+            <div className="text-sm text-red-600 text-center" role="alert">
+              {error}
+            </div>
+          )}
+
           {/* Submit Button */}
-          <Button type="submit" variant="primary" size="lg" fullWidth>
-            Sign in
+          <Button
+            type="submit"
+            variant="primary"
+            size="lg"
+            fullWidth
+            disabled={isLoading}
+          >
+            {isLoading ? "Signing in..." : "Sign in"}
           </Button>
         </form>
 
