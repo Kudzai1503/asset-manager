@@ -78,18 +78,23 @@ export default async function handler(
       });
     }
 
-    // Check if user already exists
-    const { data: existingUser } = await supabase
-      .from("users")
-      .select("email")
-      .eq("email", email.toLowerCase())
-      .single();
+    // Check if user already exists in our users table (if table exists)
+    try {
+      const { data: existingUser, error: checkError } = await supabase
+        .from("users")
+        .select("email")
+        .eq("email", email.toLowerCase())
+        .single();
 
-    if (existingUser) {
-      return res.status(409).json({
-        success: false,
-        message: "User with this email already exists",
-      });
+      if (!checkError && existingUser) {
+        return res.status(409).json({
+          success: false,
+          message: "User with this email already exists",
+        });
+      }
+    } catch (error) {
+      // Table might not exist yet, that's okay - we'll create it
+      console.log("Users table check:", error);
     }
 
     // Create user in Supabase Auth
@@ -105,9 +110,18 @@ export default async function handler(
 
     if (authError) {
       console.error("Auth error:", authError);
+      
+      // Check for specific error codes
+      if (authError.message?.includes("already been registered") || authError.code === "email_exists") {
+        return res.status(409).json({
+          success: false,
+          message: "A user with this email address already exists in the authentication system. Please delete the user from Supabase Auth first.",
+        });
+      }
+      
       return res.status(500).json({
         success: false,
-        message: "Failed to create user account",
+        message: authError.message || "Failed to create user account",
       });
     }
 
