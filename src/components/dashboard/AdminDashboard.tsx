@@ -238,11 +238,11 @@ export default function AdminDashboard() {
 
       {/* Assets Tab */}
       {activeTab === "assets" && (
-        <div className="bg-white rounded-lg shadow-sm border border-stone-200 p-6">
+        <div className="bg-white rounded-lg border border-stone-300/20 p-6">
           <h3 className="text-lg font-semibold text-stone-800 mb-4">All Assets</h3>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-stone-200">
-              <thead className="bg-stone-50">
+            <table className="min-w-full divide-y divide-stone-300/20 border border-stone-300/20 rounded-lg">
+              <thead className="bg-stone-50 border-b border-stone-300/20">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
                     Name
@@ -267,7 +267,7 @@ export default function AdminDashboard() {
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-stone-200">
+              <tbody className="bg-white divide-y divide-stone-300/20">
                 {assets.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-6 py-4 text-center text-stone-500">
@@ -327,7 +327,7 @@ export default function AdminDashboard() {
           </div>
 
           {showCategoryForm && (
-            <div className="bg-white rounded-lg shadow-sm border border-stone-200 p-6">
+            <div className="bg-white rounded-lg border border-stone-300/20 p-6">
               <form onSubmit={handleCreateCategory} className="space-y-4">
                 <Input
                   label="Category Name"
@@ -343,7 +343,7 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          <div className="bg-white rounded-lg shadow-sm border border-stone-200 p-6">
+          <div className="bg-white rounded-lg border border-stone-300/20 p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {categories.length === 0 ? (
                 <p className="text-stone-500">No categories found</p>
@@ -377,7 +377,7 @@ export default function AdminDashboard() {
           </div>
 
           {showDepartmentForm && (
-            <div className="bg-white rounded-lg shadow-sm border border-stone-200 p-6">
+            <div className="bg-white rounded-lg border border-stone-300/20 p-6">
               <form onSubmit={handleCreateDepartment} className="space-y-4">
                 <Input
                   label="Department Name"
@@ -393,7 +393,7 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          <div className="bg-white rounded-lg shadow-sm border border-stone-200 p-6">
+          <div className="bg-white rounded-lg border border-stone-300/20 p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {departments.length === 0 ? (
                 <p className="text-stone-500">No departments found</p>
@@ -427,7 +427,7 @@ export default function AdminDashboard() {
           </div>
 
           {showUserForm && (
-            <div className="bg-white rounded-lg shadow-sm border border-stone-200 p-6">
+            <div className="bg-white rounded-lg border border-stone-300/20 p-6">
               <form onSubmit={handleCreateUser} className="space-y-4">
                 <Input
                   label="Full Name"
@@ -488,10 +488,10 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          <div className="bg-white rounded-lg shadow-sm border border-stone-200 p-6">
+          <div className="bg-white rounded-lg border border-stone-300/20 p-6">
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-stone-200">
-                <thead className="bg-stone-50">
+              <table className="min-w-full divide-y divide-stone-300/20 border border-stone-300/20 rounded-lg">
+                <thead className="bg-stone-50 border-b border-stone-300/20">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
                       Name
@@ -504,7 +504,7 @@ export default function AdminDashboard() {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-stone-200">
+                <tbody className="bg-white divide-y divide-stone-300/20">
                   {users.length === 0 ? (
                     <tr>
                       <td colSpan={3} className="px-6 py-4 text-center text-stone-500">

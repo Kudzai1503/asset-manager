@@ -33,7 +33,7 @@ export default function DashboardSkeleton() {
         </div>
 
         {/* Table Skeleton */}
-        <div className="bg-white rounded-lg shadow-sm border border-stone-200 p-6">
+        <div className="bg-white rounded-lg border border-stone-300/20 p-6">
           <div className="space-y-4">
             <Skeleton variant="text" width={150} height={24} />
             <div className="space-y-3">

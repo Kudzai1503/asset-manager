@@ -153,7 +153,7 @@ export default function UserDashboard({ userId }: UserDashboardProps) {
       </div>
 
       {showCreateForm && (
-        <div className="bg-white rounded-lg shadow-sm border border-stone-200 p-6">
+        <div className="bg-white rounded-lg border border-stone-300/20 p-6">
           <h3 className="text-lg font-semibold text-stone-800 mb-4">
             Create New Asset
           </h3>
@@ -230,15 +230,15 @@ export default function UserDashboard({ userId }: UserDashboardProps) {
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow-sm border border-stone-200 p-6">
+      <div className="bg-white rounded-lg border border-stone-300/20 p-6">
         {assets.length === 0 ? (
           <div className="text-center py-8 text-stone-500">
             <p>No assets found. Create your first asset to get started.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-stone-200">
-              <thead className="bg-stone-50">
+            <table className="min-w-full divide-y divide-stone-300/20 border border-stone-300/20 rounded-lg">
+              <thead className="bg-stone-50 border-b border-stone-300/20">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
                     Name
@@ -257,7 +257,7 @@ export default function UserDashboard({ userId }: UserDashboardProps) {
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-stone-200">
+              <tbody className="bg-white divide-y divide-stone-300/20">
                 {assets.map((asset) => (
                   <tr key={asset.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-stone-900">
