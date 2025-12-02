@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/router";
 import Button from "@/components/buttons/Button";
 import Input from "@/components/inputs/Input";
 import { AdminDashboardSkeleton } from "@/components/skeletons";
 import { useToast } from "@/context/ToastContext";
+import ConfirmationModal from "@/components/modals/ConfirmationModal";
 
 type Asset = {
   id: string;
@@ -49,6 +50,29 @@ export default function AdminDashboard() {
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [isCreatingDepartment, setIsCreatingDepartment] = useState(false);
   const [isCreatingUser, setIsCreatingUser] = useState(false);
+  
+  // Edit states
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [editingDepartment, setEditingDepartment] = useState<Department | null>(null);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  
+  // Loading states for delete operations
+  const [deletingCategoryId, setDeletingCategoryId] = useState<string | null>(null);
+  const [deletingDepartmentId, setDeletingDepartmentId] = useState<string | null>(null);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+  const [deletingAssetId, setDeletingAssetId] = useState<string | null>(null);
+  
+  // Confirmation modal state
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<() => void>(() => () => {});
+  const [modalConfig, setModalConfig] = useState({
+    title: 'Confirm Action',
+    message: 'Are you sure you want to perform this action?',
+    confirmText: 'Confirm',
+    cancelText: 'Cancel'
+  });
+  
+  const pendingAction = useRef<{ type: string; id: string } | null>(null);
   
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState("");
@@ -191,9 +215,15 @@ export default function AdminDashboard() {
     
     const token = localStorage.getItem("access_token");
     setIsCreatingCategory(true);
+    
     try {
-      const response = await fetch("/api/categories", {
-        method: "POST",
+      const url = editingCategory 
+        ? `/api/categories/${editingCategory.id}`
+        : '/api/categories';
+      const method = editingCategory ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -206,17 +236,136 @@ export default function AdminDashboard() {
       if (response.ok) {
         setNewCategory("");
         setShowCategoryForm(false);
+        setEditingCategory(null);
         loadCategories();
-        addToast('Category created successfully', 'success');
+        addToast(
+          editingCategory 
+            ? 'Category updated successfully' 
+            : 'Category created successfully', 
+          'success'
+        );
       } else {
-        addToast(data.message || 'Failed to create category', 'error');
+        addToast(data.message || 'Failed to save category', 'error');
       }
     } catch (error) {
-      console.error('Error creating category:', error);
-      addToast('An error occurred while creating the category', 'error');
+      console.error('Error saving category:', error);
+      addToast('An error occurred while saving the category', 'error');
     } finally {
       setIsCreatingCategory(false);
     }
+  };
+  
+  const handleEditCategory = (category: Category) => {
+    setEditingCategory(category);
+    setNewCategory(category.name);
+    setShowCategoryForm(true);
+    // Scroll to form
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  
+  const handleDeleteCategory = (categoryId: string) => {
+    setModalConfig({
+      title: 'Delete Category',
+      message: 'Are you sure you want to delete this category? This action cannot be undone.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel'
+    });
+    pendingAction.current = { type: 'deleteCategory', id: categoryId };
+    setShowConfirmModal(true);
+  };
+  
+  const executePendingAction = async () => {
+    if (!pendingAction.current) return;
+    
+    const { type, id } = pendingAction.current;
+    const token = localStorage.getItem("access_token");
+    
+    try {
+      switch (type) {
+        case 'deleteCategory':
+          setDeletingCategoryId(id);
+          const categoryResponse = await fetch(`/api/categories/${id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          
+          if (categoryResponse.ok) {
+            addToast('Category deleted successfully', 'success');
+            loadCategories();
+          } else {
+            const data = await categoryResponse.json();
+            addToast(data.message || 'Failed to delete category', 'error');
+          }
+          setDeletingCategoryId(null);
+          break;
+          
+        case 'deleteDepartment':
+          setDeletingDepartmentId(id);
+          const deptResponse = await fetch(`/api/departments/${id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          
+          if (deptResponse.ok) {
+            addToast('Department deleted successfully', 'success');
+            loadDepartments();
+          } else {
+            const data = await deptResponse.json();
+            addToast(data.message || 'Failed to delete department', 'error');
+          }
+          setDeletingDepartmentId(null);
+          break;
+          
+        case 'deleteUser':
+          setDeletingUserId(id);
+          const userResponse = await fetch(`/api/users/${id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          
+          if (userResponse.ok) {
+            addToast('User deleted successfully', 'success');
+            loadUsers();
+          } else {
+            const data = await userResponse.json();
+            addToast(data.message || 'Failed to delete user', 'error');
+          }
+          setDeletingUserId(null);
+          break;
+          
+        case 'deleteAsset':
+          setDeletingAssetId(id);
+          const assetResponse = await fetch(`/api/assets/${id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          
+          if (assetResponse.ok) {
+            addToast('Asset deleted successfully', 'success');
+            loadAssets();
+          } else {
+            const data = await assetResponse.json();
+            addToast(data.message || 'Failed to delete asset', 'error');
+          }
+          setDeletingAssetId(null);
+          break;
+      }
+    } catch (error) {
+      console.error(`Error in ${type}:`, error);
+      addToast(`An error occurred while processing your request`, 'error');
+    } finally {
+      pendingAction.current = null;
+    }
+  };
+  
+  const handleConfirm = () => {
+    setShowConfirmModal(false);
+    executePendingAction();
+  };
+  
+  const handleCancel = () => {
+    setShowConfirmModal(false);
+    pendingAction.current = null;
   };
 
   const handleCreateDepartment = async (e: React.FormEvent) => {
@@ -228,9 +377,15 @@ export default function AdminDashboard() {
     
     const token = localStorage.getItem("access_token");
     setIsCreatingDepartment(true);
+    
     try {
-      const response = await fetch("/api/departments", {
-        method: "POST",
+      const url = editingDepartment
+        ? `/api/departments/${editingDepartment.id}`
+        : '/api/departments';
+      const method = editingDepartment ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -243,17 +398,42 @@ export default function AdminDashboard() {
       if (response.ok) {
         setNewDepartment("");
         setShowDepartmentForm(false);
+        setEditingDepartment(null);
         loadDepartments();
-        addToast('Department created successfully', 'success');
+        addToast(
+          editingDepartment 
+            ? 'Department updated successfully' 
+            : 'Department created successfully', 
+          'success'
+        );
       } else {
-        addToast(data.message || 'Failed to create department', 'error');
+        addToast(data.message || 'Failed to save department', 'error');
       }
     } catch (error) {
-      console.error('Error creating department:', error);
-      addToast('An error occurred while creating the department', 'error');
+      console.error('Error saving department:', error);
+      addToast('An error occurred while saving the department', 'error');
     } finally {
       setIsCreatingDepartment(false);
     }
+  };
+  
+  const handleEditDepartment = (department: Department) => {
+    setEditingDepartment(department);
+    setNewDepartment(department.name);
+    setShowDepartmentForm(true);
+    // Scroll to form
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  
+  const handleDeleteDepartment = (departmentId: string) => {
+    setModalConfig({
+      title: 'Delete Department',
+      message: 'Are you sure you want to delete this department? This action cannot be undone.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel'
+    });
+    pendingAction.current = { type: 'deleteDepartment', id: departmentId };
+    setShowConfirmModal(true);
   };
 
   const handleCreateUser = async (e: React.FormEvent) => {
@@ -268,26 +448,38 @@ export default function AdminDashboard() {
       addToast('Email cannot be empty', 'error');
       return;
     }
-    if (!newUserPassword) {
+    if (!editingUser && !newUserPassword) {
       addToast('Password cannot be empty', 'error');
       return;
     }
     
     const token = localStorage.getItem("access_token");
     setIsCreatingUser(true);
+    
     try {
-      const response = await fetch("/api/users/create", {
-        method: "POST",
+      const url = editingUser 
+        ? `/api/users/${editingUser.id}`
+        : '/api/users/create';
+      const method = editingUser ? 'PUT' : 'POST';
+      
+      const userData: any = {
+        name: newUserName,
+        email: newUserEmail,
+        userType: newUserType,
+      };
+      
+      // Only include password for new users or if it's being updated
+      if (!editingUser || newUserPassword) {
+        userData.password = newUserPassword;
+      }
+      
+      const response = await fetch(url, {
+        method,
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          name: newUserName,
-          email: newUserEmail,
-          password: newUserPassword,
-          userType: newUserType,
-        }),
+        body: JSON.stringify(userData),
       });
 
       const data = await response.json();
@@ -298,47 +490,67 @@ export default function AdminDashboard() {
         setNewUserPassword("");
         setNewUserType("user");
         setShowUserForm(false);
+        setEditingUser(null);
         loadUsers();
-        addToast('User created successfully', 'success');
+        addToast(
+          editingUser 
+            ? 'User updated successfully' 
+            : 'User created successfully', 
+          'success'
+        );
       } else {
-        addToast(data.message || 'Failed to create user', 'error');
+        addToast(data.message || `Failed to ${editingUser ? 'update' : 'create'} user`, 'error');
       }
     } catch (error) {
-      console.error('Error creating user:', error);
-      addToast('An error occurred while creating the user', 'error');
+      console.error('Error saving user:', error);
+      addToast(`An error occurred while ${editingUser ? 'updating' : 'creating'} the user`, 'error');
     } finally {
       setIsCreatingUser(false);
     }
   };
+  
+  const handleEditUser = (user: User) => {
+    setEditingUser(user);
+    setNewUserName(user.name);
+    setNewUserEmail(user.email);
+    setNewUserType(user.user_type as any);
+    setNewUserPassword('');
+    setShowUserForm(true);
+    // Scroll to form
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  
+  const handleDeleteUser = (userId: string) => {
+    setModalConfig({
+      title: 'Delete User',
+      message: 'Are you sure you want to delete this user? This action cannot be undone.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel'
+    });
+    pendingAction.current = { type: 'deleteUser', id: userId };
+    setShowConfirmModal(true);
+  };
+  
+  const resetUserForm = () => {
+    setNewUserName("");
+    setNewUserEmail("");
+    setNewUserPassword("");
+    setNewUserType("user");
+    setEditingUser(null);
+    setShowUserForm(false);
+  };
 
   const [isDeletingAsset, setIsDeletingAsset] = useState<string | null>(null);
 
-  const handleDeleteAsset = async (assetId: string) => {
-    if (!confirm("Are you sure you want to delete this asset?")) return;
-
-    const token = localStorage.getItem("access_token");
-    setIsDeletingAsset(assetId);
-    try {
-      const response = await fetch(`/api/assets/${assetId}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      });
-
-      if (response.ok) {
-        addToast('Asset deleted successfully', 'success');
-        await loadAssets();
-      } else {
-        const data = await response.json();
-        addToast(data.message || 'Failed to delete asset', 'error');
-      }
-    } catch (error) {
-      console.error('Error deleting asset:', error);
-      addToast('An error occurred while deleting the asset', 'error');
-    } finally {
-      setIsDeletingAsset(null);
-    }
+  const handleDeleteAsset = (assetId: string) => {
+    setModalConfig({
+      title: 'Delete Asset',
+      message: 'Are you sure you want to delete this asset? This action cannot be undone.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel'
+    });
+    pendingAction.current = { type: 'deleteAsset', id: assetId };
+    setShowConfirmModal(true);
   };
 
   if (isLoading) {
@@ -346,8 +558,17 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col space-y-6">
+    <div className="min-h-screen bg-gray-50">
+      <ConfirmationModal
+        isOpen={showConfirmModal}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        confirmText={modalConfig.confirmText}
+        cancelText={modalConfig.cancelText}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex justify-between items-center">
           <h2 className="text-2xl font-semibold text-stone-800">Admin Dashboard</h2>
         </div>
@@ -549,6 +770,23 @@ export default function AdminDashboard() {
 
           {showCategoryForm && (
             <div className="bg-white rounded-lg border border-stone-300/20 p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h4 className="text-lg font-medium text-stone-800">
+                  {editingCategory ? 'Edit Category' : 'Create New Category'}
+                </h4>
+                <button
+                  onClick={() => {
+                    setShowCategoryForm(false);
+                    setEditingCategory(null);
+                    setNewCategory('');
+                  }}
+                  className="text-stone-500 hover:text-stone-700"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </div>
               <form onSubmit={handleCreateCategory} className="space-y-4">
                 <Input
                   label="Category Name"
@@ -556,14 +794,32 @@ export default function AdminDashboard() {
                   onChange={(e) => setNewCategory(e.target.value)}
                   placeholder="Enter category name"
                   required
+                  autoFocus
                 />
-                <Button 
-                  onClick={handleCreateCategory} 
-                  className="mt-2"
-                  disabled={isCreatingCategory}
-                >
-                  {isCreatingCategory ? 'Creating...' : 'Create Category'}
-                </Button>
+                <div className="flex space-x-3">
+                  <Button 
+                    type="submit"
+                    variant="primary"
+                    className="flex-1"
+                    disabled={isCreatingCategory}
+                  >
+                    {isCreatingCategory 
+                      ? (editingCategory ? 'Updating...' : 'Creating...') 
+                      : (editingCategory ? 'Update Category' : 'Create Category')}
+                  </Button>
+                  <Button 
+                    type="button"
+                    variant="secondary"
+                    onClick={() => {
+                      setShowCategoryForm(false);
+                      setEditingCategory(null);
+                      setNewCategory('');
+                    }}
+                    disabled={isCreatingCategory}
+                  >
+                    Cancel
+                  </Button>
+                </div>
               </form>
             </div>
           )}
@@ -571,14 +827,48 @@ export default function AdminDashboard() {
           <div className="bg-white rounded-lg border border-stone-300/20 p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {categories.length === 0 ? (
-                <p className="text-stone-500">No categories found</p>
+                <div className="col-span-full py-8 text-center">
+                  <svg className="mx-auto h-12 w-12 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                  <h3 className="mt-2 text-sm font-medium text-stone-900">No categories</h3>
+                  <p className="mt-1 text-sm text-stone-500">Get started by creating a new category.</p>
+                </div>
               ) : (
                 categories.map((category) => (
                   <div
                     key={category.id}
-                    className="p-4 border border-stone-200 rounded-lg"
+                    className="group relative p-4 border border-stone-200 rounded-lg hover:shadow-md transition-shadow duration-200"
                   >
-                    <h4 className="font-medium text-stone-800">{category.name}</h4>
+                    <h4 className="font-medium text-stone-800 pr-8">{category.name}</h4>
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <button
+                        onClick={() => handleEditCategory(category)}
+                        className="p-1 text-stone-500 hover:text-blue-600 rounded-full hover:bg-blue-50"
+                        title="Edit category"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => handleDeleteCategory(category.id)}
+                        disabled={deletingCategoryId === category.id}
+                        className="p-1 text-stone-500 hover:text-red-600 rounded-full hover:bg-red-50 ml-1"
+                        title="Delete category"
+                      >
+                        {deletingCategoryId === category.id ? (
+                          <svg className="animate-spin h-4 w-4 text-red-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 ))
               )}
@@ -603,6 +893,23 @@ export default function AdminDashboard() {
 
           {showDepartmentForm && (
             <div className="bg-white rounded-lg border border-stone-300/20 p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h4 className="text-lg font-medium text-stone-800">
+                  {editingDepartment ? 'Edit Department' : 'Create New Department'}
+                </h4>
+                <button
+                  onClick={() => {
+                    setShowDepartmentForm(false);
+                    setEditingDepartment(null);
+                    setNewDepartment('');
+                  }}
+                  className="text-stone-500 hover:text-stone-700"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </div>
               <form onSubmit={handleCreateDepartment} className="space-y-4">
                 <Input
                   label="Department Name"
@@ -610,14 +917,32 @@ export default function AdminDashboard() {
                   onChange={(e) => setNewDepartment(e.target.value)}
                   placeholder="Enter department name"
                   required
+                  autoFocus
                 />
-                <Button 
-                  onClick={handleCreateDepartment} 
-                  className="mt-2"
-                  disabled={isCreatingDepartment}
-                >
-                  {isCreatingDepartment ? 'Creating...' : 'Create Department'}
-                </Button>
+                <div className="flex space-x-3">
+                  <Button 
+                    type="submit"
+                    variant="primary"
+                    className="flex-1"
+                    disabled={isCreatingDepartment}
+                  >
+                    {isCreatingDepartment 
+                      ? (editingDepartment ? 'Updating...' : 'Creating...') 
+                      : (editingDepartment ? 'Update Department' : 'Create Department')}
+                  </Button>
+                  <Button 
+                    type="button"
+                    variant="secondary"
+                    onClick={() => {
+                      setShowDepartmentForm(false);
+                      setEditingDepartment(null);
+                      setNewDepartment('');
+                    }}
+                    disabled={isCreatingDepartment}
+                  >
+                    Cancel
+                  </Button>
+                </div>
               </form>
             </div>
           )}
@@ -625,14 +950,48 @@ export default function AdminDashboard() {
           <div className="bg-white rounded-lg border border-stone-300/20 p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {departments.length === 0 ? (
-                <p className="text-stone-500">No departments found</p>
+                <div className="col-span-full py-8 text-center">
+                  <svg className="mx-auto h-12 w-12 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                  <h3 className="mt-2 text-sm font-medium text-stone-900">No departments</h3>
+                  <p className="mt-1 text-sm text-stone-500">Get started by creating a new department.</p>
+                </div>
               ) : (
                 departments.map((department) => (
                   <div
                     key={department.id}
-                    className="p-4 border border-stone-200 rounded-lg"
+                    className="group relative p-4 border border-stone-200 rounded-lg hover:shadow-md transition-shadow duration-200"
                   >
-                    <h4 className="font-medium text-stone-800">{department.name}</h4>
+                    <h4 className="font-medium text-stone-800 pr-8">{department.name}</h4>
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <button
+                        onClick={() => handleEditDepartment(department)}
+                        className="p-1 text-stone-500 hover:text-blue-600 rounded-full hover:bg-blue-50"
+                        title="Edit department"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => handleDeleteDepartment(department.id)}
+                        disabled={deletingDepartmentId === department.id}
+                        className="p-1 text-stone-500 hover:text-red-600 rounded-full hover:bg-red-50 ml-1"
+                        title="Delete department"
+                      >
+                        {deletingDepartmentId === department.id ? (
+                          <svg className="animate-spin h-4 w-4 text-red-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 ))
               )}
@@ -657,6 +1016,19 @@ export default function AdminDashboard() {
 
           {showUserForm && (
             <div className="bg-white rounded-lg border border-stone-300/20 p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h4 className="text-lg font-medium text-stone-800">
+                  {editingUser ? 'Edit User' : 'Create New User'}
+                </h4>
+                <button
+                  onClick={resetUserForm}
+                  className="text-stone-500 hover:text-stone-700"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </div>
               <form onSubmit={handleCreateUser} className="space-y-4">
                 <Input
                   label="Full Name"
@@ -664,6 +1036,7 @@ export default function AdminDashboard() {
                   onChange={(e) => setNewUserName(e.target.value)}
                   placeholder="John Doe"
                   required
+                  autoFocus
                 />
                 <Input
                   label="Email"
@@ -672,14 +1045,15 @@ export default function AdminDashboard() {
                   onChange={(e) => setNewUserEmail(e.target.value)}
                   placeholder="user@example.com"
                   required
+                  disabled={!!editingUser}
                 />
                 <Input
-                  label="Password"
+                  label={editingUser ? "New Password (leave blank to keep current)" : "Password"}
                   type="password"
                   value={newUserPassword}
                   onChange={(e) => setNewUserPassword(e.target.value)}
                   placeholder="••••••••"
-                  required
+                  required={!editingUser}
                 />
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-stone-700">
@@ -710,9 +1084,26 @@ export default function AdminDashboard() {
                     </button>
                   </div>
                 </div>
-                <Button type="submit" variant="primary" fullWidth>
-                  Create User
-                </Button>
+                <div className="flex space-x-3 pt-2">
+                  <Button 
+                    type="submit" 
+                    variant="primary" 
+                    className="flex-1"
+                    disabled={isCreatingUser}
+                  >
+                    {isCreatingUser 
+                      ? (editingUser ? 'Updating...' : 'Creating...') 
+                      : (editingUser ? 'Update User' : 'Create User')}
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="secondary" 
+                    onClick={resetUserForm}
+                    disabled={isCreatingUser}
+                  >
+                    Cancel
+                  </Button>
+                </div>
               </form>
             </div>
           )}
@@ -731,28 +1122,77 @@ export default function AdminDashboard() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
                       Type
                     </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-stone-500 uppercase tracking-wider">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-stone-300/20">
                   {users.length === 0 ? (
                     <tr>
-                      <td colSpan={3} className="px-6 py-4 text-center text-stone-500">
+                      <td colSpan={4} className="px-6 py-12 text-center text-stone-500">
                         No users found
                       </td>
                     </tr>
                   ) : (
                     users.map((user) => (
-                      <tr key={user.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-stone-900">
-                          {user.name}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-500">
-                          {user.email}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-500 capitalize">
-                          {user.user_type}
-                        </td>
-                      </tr>
+                      <tr key={user.id} className="hover:bg-stone-50 group">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-stone-900">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-10 w-10 flex items-center justify-center rounded-full bg-stone-100 text-stone-600 font-medium">
+                            {user.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="ml-4">
+                            <div className="font-medium text-stone-900">{user.name}</div>
+                            <div className="text-stone-500 text-xs">
+                              {user.user_type === 'admin' ? 'Administrator' : 'Standard User'}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-500">
+                        {user.email}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-500">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          user.user_type === 'admin' 
+                            ? 'bg-purple-100 text-purple-800' 
+                            : 'bg-blue-100 text-blue-800'
+                        }`}>
+                          {user.user_type === 'admin' ? 'Admin' : 'User'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex items-center justify-end space-x-2 opacity-0 group-hover:opacity-100">
+                          <button
+                            onClick={() => handleEditUser(user)}
+                            className="text-stone-500 hover:text-blue-600"
+                            title="Edit user"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteUser(user.id)}
+                            disabled={deletingUserId === user.id}
+                            className="text-stone-500 hover:text-red-600"
+                            title="Delete user"
+                          >
+                            {deletingUserId === user.id ? (
+                              <svg className="animate-spin h-4 w-4 text-red-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                            ) : (
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            )}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
                     ))
                   )}
                 </tbody>
