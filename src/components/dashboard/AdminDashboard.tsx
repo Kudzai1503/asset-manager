@@ -46,6 +46,9 @@ export default function AdminDashboard() {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+  const [isCreatingDepartment, setIsCreatingDepartment] = useState(false);
+  const [isCreatingUser, setIsCreatingUser] = useState(false);
   
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState("");
@@ -187,6 +190,7 @@ export default function AdminDashboard() {
     }
     
     const token = localStorage.getItem("access_token");
+    setIsCreatingCategory(true);
     try {
       const response = await fetch("/api/categories", {
         method: "POST",
@@ -210,6 +214,8 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Error creating category:', error);
       addToast('An error occurred while creating the category', 'error');
+    } finally {
+      setIsCreatingCategory(false);
     }
   };
 
@@ -221,6 +227,7 @@ export default function AdminDashboard() {
     }
     
     const token = localStorage.getItem("access_token");
+    setIsCreatingDepartment(true);
     try {
       const response = await fetch("/api/departments", {
         method: "POST",
@@ -244,6 +251,8 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Error creating department:', error);
       addToast('An error occurred while creating the department', 'error');
+    } finally {
+      setIsCreatingDepartment(false);
     }
   };
 
@@ -265,6 +274,7 @@ export default function AdminDashboard() {
     }
     
     const token = localStorage.getItem("access_token");
+    setIsCreatingUser(true);
     try {
       const response = await fetch("/api/users/create", {
         method: "POST",
@@ -296,22 +306,38 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Error creating user:', error);
       addToast('An error occurred while creating the user', 'error');
+    } finally {
+      setIsCreatingUser(false);
     }
   };
+
+  const [isDeletingAsset, setIsDeletingAsset] = useState<string | null>(null);
 
   const handleDeleteAsset = async (assetId: string) => {
     if (!confirm("Are you sure you want to delete this asset?")) return;
 
     const token = localStorage.getItem("access_token");
-    const response = await fetch(`/api/assets/${assetId}`, {
+    setIsDeletingAsset(assetId);
+    try {
+      const response = await fetch(`/api/assets/${assetId}`, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${token}`,
       },
-    });
+      });
 
-    if (response.ok) {
-      loadAssets();
+      if (response.ok) {
+        addToast('Asset deleted successfully', 'success');
+        await loadAssets();
+      } else {
+        const data = await response.json();
+        addToast(data.message || 'Failed to delete asset', 'error');
+      }
+    } catch (error) {
+      console.error('Error deleting asset:', error);
+      addToast('An error occurred while deleting the asset', 'error');
+    } finally {
+      setIsDeletingAsset(null);
     }
   };
 
@@ -531,8 +557,12 @@ export default function AdminDashboard() {
                   placeholder="Enter category name"
                   required
                 />
-                <Button type="submit" variant="primary" fullWidth>
-                  Create Category
+                <Button 
+                  onClick={handleCreateCategory} 
+                  className="mt-2"
+                  disabled={isCreatingCategory}
+                >
+                  {isCreatingCategory ? 'Creating...' : 'Create Category'}
                 </Button>
               </form>
             </div>
@@ -581,8 +611,12 @@ export default function AdminDashboard() {
                   placeholder="Enter department name"
                   required
                 />
-                <Button type="submit" variant="primary" fullWidth>
-                  Create Department
+                <Button 
+                  onClick={handleCreateDepartment} 
+                  className="mt-2"
+                  disabled={isCreatingDepartment}
+                >
+                  {isCreatingDepartment ? 'Creating...' : 'Create Department'}
                 </Button>
               </form>
             </div>
