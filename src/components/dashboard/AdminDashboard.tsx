@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import Button from "@/components/buttons/Button";
 import Input from "@/components/inputs/Input";
 import { AdminDashboardSkeleton } from "@/components/skeletons";
+import { useToast } from "@/context/ToastContext";
 
 type Asset = {
   id: string;
@@ -177,68 +178,124 @@ export default function AdminDashboard() {
     }
   };
 
+  const { addToast } = useToast();
   const handleCreateCategory = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!newCategory.trim()) {
+      addToast('Category name cannot be empty', 'error');
+      return;
+    }
+    
     const token = localStorage.getItem("access_token");
-    const response = await fetch("/api/categories", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ name: newCategory }),
-    });
+    try {
+      const response = await fetch("/api/categories", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ name: newCategory }),
+      });
 
-    if (response.ok) {
-      setNewCategory("");
-      setShowCategoryForm(false);
-      loadCategories();
+      const data = await response.json();
+
+      if (response.ok) {
+        setNewCategory("");
+        setShowCategoryForm(false);
+        loadCategories();
+        addToast('Category created successfully', 'success');
+      } else {
+        addToast(data.message || 'Failed to create category', 'error');
+      }
+    } catch (error) {
+      console.error('Error creating category:', error);
+      addToast('An error occurred while creating the category', 'error');
     }
   };
 
   const handleCreateDepartment = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!newDepartment.trim()) {
+      addToast('Department name cannot be empty', 'error');
+      return;
+    }
+    
     const token = localStorage.getItem("access_token");
-    const response = await fetch("/api/departments", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ name: newDepartment }),
-    });
+    try {
+      const response = await fetch("/api/departments", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ name: newDepartment }),
+      });
 
-    if (response.ok) {
-      setNewDepartment("");
-      setShowDepartmentForm(false);
-      loadDepartments();
+      const data = await response.json();
+
+      if (response.ok) {
+        setNewDepartment("");
+        setShowDepartmentForm(false);
+        loadDepartments();
+        addToast('Department created successfully', 'success');
+      } else {
+        addToast(data.message || 'Failed to create department', 'error');
+      }
+    } catch (error) {
+      console.error('Error creating department:', error);
+      addToast('An error occurred while creating the department', 'error');
     }
   };
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Basic validation
+    if (!newUserName.trim()) {
+      addToast('Name cannot be empty', 'error');
+      return;
+    }
+    if (!newUserEmail.trim()) {
+      addToast('Email cannot be empty', 'error');
+      return;
+    }
+    if (!newUserPassword) {
+      addToast('Password cannot be empty', 'error');
+      return;
+    }
+    
     const token = localStorage.getItem("access_token");
-    const response = await fetch("/api/users/create", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        name: newUserName,
-        email: newUserEmail,
-        password: newUserPassword,
-        userType: newUserType,
-      }),
-    });
+    try {
+      const response = await fetch("/api/users/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: newUserName,
+          email: newUserEmail,
+          password: newUserPassword,
+          userType: newUserType,
+        }),
+      });
 
-    if (response.ok) {
-      setNewUserName("");
-      setNewUserEmail("");
-      setNewUserPassword("");
-      setNewUserType("user");
-      setShowUserForm(false);
-      loadUsers();
+      const data = await response.json();
+
+      if (response.ok) {
+        setNewUserName("");
+        setNewUserEmail("");
+        setNewUserPassword("");
+        setNewUserType("user");
+        setShowUserForm(false);
+        loadUsers();
+        addToast('User created successfully', 'success');
+      } else {
+        addToast(data.message || 'Failed to create user', 'error');
+      }
+    } catch (error) {
+      console.error('Error creating user:', error);
+      addToast('An error occurred while creating the user', 'error');
     }
   };
 
@@ -674,4 +731,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-
