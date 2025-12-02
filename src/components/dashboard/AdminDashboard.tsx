@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 import Button from "@/components/buttons/Button";
 import Input from "@/components/inputs/Input";
 import { AdminDashboardSkeleton } from "@/components/skeletons";
@@ -31,20 +32,72 @@ type User = {
   user_type: string;
 };
 
+type TabType = "assets" | "categories" | "departments" | "users";
+
+const isValidTab = (tab: string | string[] | undefined): tab is TabType => {
+  return ["assets", "categories", "departments", "users"].includes(tab as string);
+};
+
 export default function AdminDashboard() {
+  const router = useRouter();
   const [assets, setAssets] = useState<Asset[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<
-    "assets" | "categories" | "departments" | "users"
-  >("assets");
+  
+  // Search and filter states
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedDepartment, setSelectedDepartment] = useState<string>("");
+  
+  // Get active tab from URL query parameter or default to 'assets'
+  const activeTab = isValidTab(router.query.tab) ? router.query.tab : "assets";
 
-  // Form states
+  // Update URL when tab changes
+  const setActiveTab = (tab: TabType) => {
+    router.push({
+      pathname: router.pathname,
+      query: { ...router.query, tab },
+    }, undefined, { shallow: true });
+  };
+
+  // Form states - reset when tab changes
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [showDepartmentForm, setShowDepartmentForm] = useState(false);
   const [showUserForm, setShowUserForm] = useState(false);
+
+  // Reset form states when tab changes
+  useEffect(() => {
+    setShowCategoryForm(false);
+    setShowDepartmentForm(false);
+    setShowUserForm(false);
+  }, [activeTab]);
+
+  // Calculate stats
+  const totalAssetValue = assets.reduce((sum, asset) => sum + (asset.cost || 0), 0);
+  const numCategories = categories.length;
+  const numDepartments = departments.length;
+
+  // Filter assets based on search and filters
+  const filteredAssets = assets.filter(asset => {
+    const matchesSearch = searchTerm === '' || 
+      asset.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      asset.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      asset.department.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesCategory = !selectedCategory || asset.category === selectedCategory;
+    const matchesDepartment = !selectedDepartment || asset.department === selectedDepartment;
+    
+    return matchesSearch && matchesCategory && matchesDepartment;
+  });
+
+  // Reset all filters
+  const resetFilters = () => {
+    setSearchTerm('');
+    setSelectedCategory('');
+    setSelectedDepartment('');
+  };
   const [newCategory, setNewCategory] = useState("");
   const [newDepartment, setNewDepartment] = useState("");
   const [newUserName, setNewUserName] = useState("");
@@ -211,27 +264,54 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-semibold text-stone-800">Admin Dashboard</h2>
-      </div>
+      <div className="flex flex-col space-y-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-semibold text-stone-800">Admin Dashboard</h2>
+        </div>
+        
+        {/* Stats Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white p-6 rounded-lg border border-stone-200 shadow-sm">
+            <div className="text-stone-500 text-sm font-medium">Total Assets</div>
+            <div className="text-2xl font-bold text-stone-800">{assets.length}</div>
+          </div>
+          <div className="bg-white p-6 rounded-lg border border-stone-200 shadow-sm">
+            <div className="text-stone-500 text-sm font-medium">Total Asset Value</div>
+            <div className="text-2xl font-bold text-stone-800">
+              ${totalAssetValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-lg border border-stone-200 shadow-sm">
+            <div className="text-stone-500 text-sm font-medium">Categories</div>
+            <div className="text-2xl font-bold text-stone-800">{numCategories}</div>
+          </div>
+          <div className="bg-white p-6 rounded-lg border border-stone-200 shadow-sm">
+            <div className="text-stone-500 text-sm font-medium">Departments</div>
+            <div className="text-2xl font-bold text-stone-800">{numDepartments}</div>
+          </div>
+        </div>
 
       {/* Tabs */}
       <div className="border-b border-stone-200">
         <nav className="-mb-px flex space-x-8">
           {(["assets", "categories", "departments", "users"] as const).map(
-            (tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`py-4 px-1 border-b-2 font-medium text-sm capitalize ${
-                  activeTab === tab
-                    ? "border-stone-900 text-stone-900"
-                    : "border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300"
-                }`}
-              >
-                {tab}
-              </button>
-            )
+            (tab) => {
+              const isActive = activeTab === tab;
+              return (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`py-4 px-1 border-b-2 font-medium text-sm capitalize transition-colors duration-200 ${
+                    isActive
+                      ? "border-stone-900 text-stone-900"
+                      : "border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300"
+                  }`}
+                  aria-current={isActive ? "page" : undefined}
+                >
+                  {tab}
+                </button>
+              );
+            }
           )}
         </nav>
       </div>
@@ -239,7 +319,64 @@ export default function AdminDashboard() {
       {/* Assets Tab */}
       {activeTab === "assets" && (
         <div className="bg-white rounded-lg border border-stone-300/20 p-6">
-          <h3 className="text-lg font-semibold text-stone-800 mb-4">All Assets</h3>
+          <div className="flex flex-col space-y-4">
+            <h3 className="text-lg font-semibold text-stone-800">All Assets</h3>
+            
+            {/* Search and Filter Bar */}
+            <div className="flex flex-col space-y-3 md:space-y-0 md:flex-row md:items-center md:space-x-4">
+              <div className="flex-1">
+                <Input
+                  type="text"
+                  placeholder="Search assets..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+              <div className="flex-1 md:max-w-xs">
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="w-full px-4 py-2 border border-stone-300 rounded-md focus:ring-2 focus:ring-stone-500 focus:border-stone-500 text-sm"
+                >
+                  <option value="">All Categories</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.name}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex-1 md:max-w-xs">
+                <select
+                  value={selectedDepartment}
+                  onChange={(e) => setSelectedDepartment(e.target.value)}
+                  className="w-full px-4 py-2 border border-stone-300 rounded-md focus:ring-2 focus:ring-stone-500 focus:border-stone-500 text-sm"
+                >
+                  <option value="">All Departments</option>
+                  {departments.map((dept) => (
+                    <option key={dept.id} value={dept.name}>
+                      {dept.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <Button
+                variant="secondary"
+                onClick={resetFilters}
+                className="whitespace-nowrap"
+              >
+                Clear Filters
+              </Button>
+            </div>
+            
+            {/* Results count */}
+            <div className="text-sm text-stone-500">
+              Showing {filteredAssets.length} of {assets.length} assets
+            </div>
+          </div>
+          
+          <div className="mt-6">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-stone-300/20 border border-stone-300/20 rounded-lg">
               <thead className="bg-stone-50 border-b border-stone-300/20">
@@ -268,14 +405,14 @@ export default function AdminDashboard() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-stone-300/20">
-                {assets.length === 0 ? (
+                {filteredAssets.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-6 py-4 text-center text-stone-500">
                       No assets found
                     </td>
                   </tr>
                 ) : (
-                  assets.map((asset) => (
+                  filteredAssets.map((asset) => (
                     <tr key={asset.id}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-stone-900">
                         {asset.name}
@@ -310,6 +447,7 @@ export default function AdminDashboard() {
             </table>
           </div>
         </div>
+      </div>
       )}
 
       {/* Categories Tab */}
@@ -532,6 +670,7 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 }
