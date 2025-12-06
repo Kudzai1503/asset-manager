@@ -226,7 +226,7 @@ export default function Login() {
             Forgot password?
           </a>
           <p className="text-sm text-stone-600">
-            Don't have an account?{" "}
+            Don&#39;t have an account?{" "}
             <Link
               href="/register"
               className="font-medium text-stone-800 hover:text-stone-900 transition-colors"

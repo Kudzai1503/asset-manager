@@ -26,7 +26,7 @@ interface UserDashboardProps {
   userId: string;
 }
 
-export default function UserDashboard({ userId }: UserDashboardProps) {
+export default function UserDashboard( ) {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
