@@ -97,7 +97,7 @@ export default function Dashboard() {
 
       {/* Dashboard Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {isAdmin ? <AdminDashboard /> : <UserDashboard userId={user.id} />}
+        {isAdmin ? <AdminDashboard /> : <UserDashboard />}
       </main>
     </div>
   );
