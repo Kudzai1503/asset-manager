@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import Button from "@/components/buttons/Button";
 import Input from "@/components/inputs/Input";
 import { UserDashboardSkeleton } from "@/components/skeletons";
+import AssetDetailsModal from "@/components/modals/AssetDetailsModal";
 
 type Asset = {
   id: string;
@@ -32,6 +33,8 @@ export default function UserDashboard( ) {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
+  const [showAssetDetails, setShowAssetDetails] = useState(false);
 
   // Form state
   const [assetName, setAssetName] = useState("");
@@ -133,6 +136,31 @@ export default function UserDashboard( ) {
       const data = await response.json();
       setError(data.message || "Failed to create asset");
     }
+  };
+
+  const handleViewAssetDetails = (asset: Asset) => {
+    setSelectedAsset(asset);
+    setShowAssetDetails(true);
+  };
+
+  const handleRegisterWarranty = async (assetId: string) => {
+    const token = localStorage.getItem("access_token");
+    const response = await fetch("/api/warranties/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ asset_id: assetId }),
+    });
+
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.message || "Failed to register warranty");
+    }
+
+    // Reload assets after warranty registration
+    loadAssets();
   };
 
   if (isLoading) {
@@ -255,6 +283,9 @@ export default function UserDashboard( ) {
                   <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
                     Cost
                   </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-stone-300/20">
@@ -275,6 +306,14 @@ export default function UserDashboard( ) {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-500">
                       ${asset.cost.toFixed(2)}
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <button
+                        onClick={() => handleViewAssetDetails(asset)}
+                        className="text-amber-600 hover:text-amber-700 font-medium transition-colors"
+                      >
+                        View Details
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -282,6 +321,16 @@ export default function UserDashboard( ) {
           </div>
         )}
       </div>
+
+      <AssetDetailsModal
+        asset={selectedAsset}
+        isOpen={showAssetDetails}
+        onClose={() => {
+          setShowAssetDetails(false);
+          setSelectedAsset(null);
+        }}
+        onRegisterWarranty={handleRegisterWarranty}
+      />
     </div>
   );
 }
