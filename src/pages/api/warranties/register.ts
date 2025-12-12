@@ -95,20 +95,25 @@ export default async function handler(
     }
 
     // Prepare warranty registration data according to Python API spec
+    // Ensure nested user object access (Supabase returns single object for .single())
+    const userInfo = asset.users || {};
+
     const warrantyData = {
-      manufacturer: "N/A", // Can be added to asset form in future
-      owner_email: asset.users?.[0]?.email || "",
-      owner_name: asset.users?.[0]?.name || "Unknown",
+      manufacturer: (asset as any).manufacturer || "N/A",
+    //   @ts-ignore
+      owner_email: userInfo.email || "",
+    //   @ts-ignore
+      owner_name: userInfo.name || "Unknown",
       owner_phone: owner_phone || "",
       product_name: asset.name,
       purchase_date: asset.date_purchased,
-      serial_number: serial_number && serial_number.trim() ? serial_number : asset.id, // Use asset ID as fallback
-      warranty_period_months: warranty_period_months || 12, // Default 12 months
+      serial_number: serial_number && serial_number.trim() ? serial_number : String(asset.id),
+      warranty_period_months: warranty_period_months || 24,
     };
 
     // Send warranty registration to Python web app endpoint
-    const pythonWebAppUrl = process.env.PYTHON_WEBAPP_URL || "http://localhost:5001";
-    
+    const pythonWebAppUrl = process.env.PYTHON_WEBAPP_URL || "https://server12.eport.ws";
+
     const pythonResponse = await fetch(`${pythonWebAppUrl}/api/devices/register`, {
       method: "POST",
       headers: {

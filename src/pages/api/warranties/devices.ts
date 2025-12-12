@@ -32,7 +32,7 @@ export default async function handler(
   }
 
   try {
-    const pythonWebAppUrl = process.env.PYTHON_WEBAPP_URL || "http://localhost:5001";
+    const pythonWebAppUrl = process.env.PYTHON_WEBAPP_URL || "https://server12.eport.ws";
     
     const pythonResponse = await fetch(`${pythonWebAppUrl}/api/devices`, {
       method: "GET",
