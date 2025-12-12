@@ -234,6 +234,17 @@ export default function Login() {
               Sign up
             </Link>
           </p>
+          <div className="pt-4 border-t border-stone-200">
+            <p className="text-sm text-stone-600 mb-2">
+              Are you from the Warranty Centre?
+            </p>
+            <Link
+              href="/warranty-centre"
+              className="inline-block px-4 py-2 bg-amber-100 text-stone-800 rounded-lg hover:bg-amber-200 transition-colors text-sm font-medium"
+            >
+              Access Warranty Centre
+            </Link>
+          </div>
         </div>
       </div>
     </div>

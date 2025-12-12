@@ -558,7 +558,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen ">
       <ConfirmationModal
         isOpen={showConfirmModal}
         title={modalConfig.title}
@@ -569,8 +569,15 @@ export default function AdminDashboard() {
         onCancel={handleCancel}
       />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center mb-8">
           <h2 className="text-2xl font-semibold text-stone-800">Admin Dashboard</h2>
+          <Button
+            variant="secondary"
+            size="md"
+            onClick={() => window.location.href = '/warranty-centre'}
+          >
+            Warranty Centre
+          </Button>
         </div>
         
         {/* Stats Overview */}

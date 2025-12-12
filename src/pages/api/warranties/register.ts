@@ -57,7 +57,7 @@ export default async function handler(
   }
 
   try {
-    const { asset_id } = req.body;
+    const { asset_id, owner_phone, warranty_period_months, serial_number } = req.body;
 
     if (!asset_id) {
       return res.status(400).json({
@@ -72,13 +72,8 @@ export default async function handler(
       .select(`
         id,
         name,
-        category_id,
-        department_id,
         date_purchased,
-        cost,
         created_by,
-        categories:category_id (name),
-        departments:department_id (name),
         users:created_by (name, email)
       `)
       .eq("id", asset_id)
@@ -99,31 +94,22 @@ export default async function handler(
       });
     }
 
-    // Prepare warranty registration data
+    // Prepare warranty registration data according to Python API spec
     const warrantyData = {
-      asset_id: asset.id,
-      asset_name: asset.name,
-      category: asset.categories?.[0]?.name || "N/A",
-      department: asset.departments?.[0]?.name || "N/A",
-      date_purchased: asset.date_purchased,
-      cost: asset.cost,
-      user_id: asset.created_by,
-      user_name: asset.users?.[0]?.name || "Unknown",
-      user_email: asset.users?.[0]?.email || "Unknown",
-      registration_date: new Date().toISOString(),
+      manufacturer: "N/A", // Can be added to asset form in future
+      owner_email: asset.users?.[0]?.email || "",
+      owner_name: asset.users?.[0]?.name || "Unknown",
+      owner_phone: owner_phone || "",
+      product_name: asset.name,
+      purchase_date: asset.date_purchased,
+      serial_number: serial_number && serial_number.trim() ? serial_number : asset.id, // Use asset ID as fallback
+      warranty_period_months: warranty_period_months || 12, // Default 12 months
     };
 
     // Send warranty registration to Python web app endpoint
-    const pythonWebAppUrl = process.env.PYTHON_WEBAPP_URL;
-    if (!pythonWebAppUrl) {
-      console.error("Python web app URL not configured");
-      return res.status(500).json({
-        success: false,
-        message: "Warranty service temporarily unavailable",
-      });
-    }
-
-    const pythonResponse = await fetch(`${pythonWebAppUrl}/warranty/register`, {
+    const pythonWebAppUrl = process.env.PYTHON_WEBAPP_URL || "http://localhost:5001";
+    
+    const pythonResponse = await fetch(`${pythonWebAppUrl}/api/devices/register`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

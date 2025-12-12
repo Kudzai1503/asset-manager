@@ -151,7 +151,12 @@ export default function UserDashboard( ) {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ asset_id: assetId }),
+      body: JSON.stringify({
+        asset_id: assetId,
+        owner_phone: "",
+        warranty_period_months: 12,
+        serial_number: assetId, // Use asset ID as serial number
+      }),
     });
 
     if (!response.ok) {
@@ -171,13 +176,22 @@ export default function UserDashboard( ) {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-semibold text-stone-800">My Assets</h2>
-        <Button
-          variant="primary"
-          size="md"
-          onClick={() => setShowCreateForm(!showCreateForm)}
-        >
-          {showCreateForm ? "Cancel" : "Create Asset"}
-        </Button>
+        <div className="flex gap-3">
+          <Button
+            variant="secondary"
+            size="md"
+            onClick={() => window.location.href = '/warranty-centre'}
+          >
+            Warranty Centre
+          </Button>
+          <Button
+            variant="primary"
+            size="md"
+            onClick={() => setShowCreateForm(!showCreateForm)}
+          >
+            {showCreateForm ? "Cancel" : "Create Asset"}
+          </Button>
+        </div>
       </div>
 
       {showCreateForm && (
